@@ -1,0 +1,141 @@
+apiVersion: package.nvidia.com/v1alpha1
+kind: HelmPipeline
+metadata:
+  labels:
+    app.kubernetes.io/name: helmpipeline
+    app.kubernetes.io/instance: helmpipeline-sample
+    app.kubernetes.io/part-of: k8s-rag-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: k8s-rag-operator
+  name: my-sample-pipeline
+spec:
+  pipeline:
+  - repoEntry:
+      name: nemollm-inference
+      url: "file:///helm-charts/pipeline"
+      #url: "cm://rag-application/nemollm-inference"
+    chartSpec:
+      chart: "nemollm-inference"
+      namespace: rag-application
+      wait: false
+    chartValues:
+      model:
+        name: llama-2-13b-chat
+        numGpus: 1
+      nodeSelector:
+        nvidia.com/gpu.product: NVIDIA-A100-80GB-PCIe-SHARED
+      imagePullSecret:
+        # Leave blank, if no imagePullSecret is needed.
+        registry: "nvcr.io"
+        name: "ngc-secret"
+        # If set to false, the chart expects either a imagePullSecret
+        # with the name configured above to be present on the cluster or that no
+        # credentials are needed.
+        create: true
+        username: '$oauthtoken'
+        password: ""
+      # persist model to a PVC
+      persistence:
+        enabled: true
+        existingClaim: ""
+        # Persistent Volume Storage Class
+        # If defined, storageClassName: <storageClass>
+        # If set to "-", storageClassName: "", which disables dynamic provisioning.
+        # If undefined (the default) or set to null, no storageClassName spec is
+        #   set, choosing the default provisioner.
+        storageClass: ""
+        accessMode: ReadWriteOnce  # If using an NFS or similar setup, you can use ReadWriteMany
+        size: 50Gi  # size of claim in bytes (e.g. 8Gi)
+        annotations: {}
+      # persist model to a host path
+      hostPath:
+        enabled: false
+        path: /model-store-inference  # Only required if hostPath is enabled -- path to the model-store-inference
+      # model init containers, select only one - if needed.
+      initContainers:
+        ngcInit: # disabled by default
+          imageName: nvcr.io/ohlfw0olaadg/ea-rag-examples/ngc-cli # should either have ngc cli pre-installed or wget + unzip pre-installed -- must not be musl-based (alpine)
+          imageTag: v3.37.1
+          secret: # name of kube secret for ngc keys named NGC_CLI_API_KEY (required) and NGC_DECRYPT_KEY (optional)
+            name: ngc-api-secret
+            create: true
+            apiKey: "" # NGC_CLI_API_KEY
+            decryptKey: "" # NGC_DECRYPT_KEY
+          env:
+            STORE_MOUNT_PATH: /model-store
+            NGC_CLI_ORG: ohlfw0olaadg # ngc org where model lives
+            NGC_CLI_TEAM: ea-participants # ngc team where model lives
+            NGC_MODEL_NAME: llama-2-13b-chat # model name in ngc
+            NGC_MODEL_VERSION: LLAMA-2-13B-CHAT-4K-FP16.23.12 # model version in ngc
+            NGC_EXE: ngc  # path to ngc cli, if pre-installed in container
+            DOWNLOAD_NGC_CLI: "false"  # set to string 'true' if container should download and install ngc cli
+            NGC_CLI_VERSION: "3.37.1"  # version of ngc cli to download (only matters if downloading)
+            TARFILE: "true"  # tells the script to untar the model. defaults to "true" as LLM models are archived in NGC.
+            MODEL_NAME: LLAMA-2-13B-CHAT-4K-FP16.23.12 # actual model name, once downloaded
+        extraInit: [] # Add any additional init containers your use case requires.
+        # -  # full init container definition here
+  - repoEntry:
+      name: nemollm-embedding
+      url: "file:///helm-charts/pipeline"
+      #url: "cm://rag-application/nemollm-embedding"
+    chartSpec:
+      chart: "nemollm-embedding"
+      namespace: rag-application
+      wait: false
+    chartValues:
+      image:
+        repository: nvcr.io/ohlfw0olaadg/ea-participants/nemo-retriever-embedding-microservice
+        pullPolicy: IfNotPresent
+        # Tag overrides the image tag whose default is the chart appVersion.
+        tag: 24.02-rc4
+      imagePullSecret:
+        # Leave blank, if no imagePullSecret is needed.
+        registry: "nvcr.io"
+        name: "ngc-secret"
+        # If set to false, the chart expects either a imagePullSecret
+        # with the name configured above to be present on the cluster or that no
+        # credentials are needed.
+        create: false
+        username: '$oauthtoken'
+        password: ""
+      # persist model to a PVC
+      persistence:
+        enabled: true
+        existingClaim: ""
+        # Persistent Volume Storage Class
+        # If defined, storageClassName: <storageClass>
+        # If set to "-", storageClassName: "", which disables dynamic provisioning.
+        # If undefined (the default) or set to null, no storageClassName spec is
+        #   set, choosing the default provisioner.
+        storageClass: ""
+        accessMode: ReadWriteOnce  # If using an NFS or similar setup, you can use ReadWriteMany
+        size: 50Gi  # size of claim in bytes (e.g. 8Gi)
+        annotations: {}
+      # persist model to a host path
+      hostPath:
+        enabled: false
+        path: /model-store-embedding  # Only required if hostPath is enabled -- path to the model-store-embedding
+      # model init containers, select only one - if needed.
+      initContainers:
+        ngcInit: # disabled by default
+          imageName: nvcr.io/ohlfw0olaadg/ea-rag-examples/ngc-cli # should either have ngc cli pre-installed or wget + unzip pre-installed -- must not be musl-based (alpine)
+          imageTag: v3.37.1
+          secret: # name of kube secret for ngc keys named NGC_CLI_API_KEY (required) and NGC_DECRYPT_KEY (optional)
+            name: ngc-api-secret
+            create: false
+            apiKey: "" # NGC_CLI_API_KEY
+            decryptKey: "" # NGC_DECRYPT_KEY
+          env:
+            STORE_MOUNT_PATH: /model-store
+            NGC_CLI_ORG: ohlfw0olaadg # ngc org where model lives
+            NGC_CLI_TEAM: ea-participants # ngc team where model lives
+            NGC_MODEL_ID: NV-Embed-QA # model ID for config file template used for TRT conversion
+            NGC_MODEL_NAME: nv-embed-qa # model name in ngc
+            NGC_MODEL_VERSION: "4" # model version in ngc
+            NGC_EXE: ngc  # path to ngc cli, if pre-installed in container
+            DOWNLOAD_NGC_CLI: "false"  # set to string 'true' if container should download and install ngc cli
+            NGC_CLI_VERSION: "3.37.1"  # version of ngc cli to download (only matters if downloading)
+            TARFILE: "false"  # tells the script to untar the model. defaults to "false" as embedding models are not archived in NGC.
+            MODEL_NAME: NV-Embed-QA-4.nemo # actual model name, once downloaded
+        extraInit: [] # Add any additional init containers your use case requires.
+        # -  # full init container definition here

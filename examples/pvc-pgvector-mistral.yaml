@@ -1,0 +1,15 @@
+# Source: nemollm-inference/templates/pvc.yaml
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: pgvector-pvc
+  namespace: rag-sample-mistral
+  labels:
+    app.kubernetes.io/name: pgvector-pvc
+spec:
+  accessModes:
+    - "ReadWriteOnce"
+  storageClassName: ontap-nas
+  resources:
+    requests:
+      storage: "5Gi"

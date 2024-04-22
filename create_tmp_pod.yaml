@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: model-repo-builder
+  namespace: rag-sample-mistral
+spec:
+  containers:
+    - name: model-repo-builder
+      image: nvcr.io/ohlfw0olaadg/ea-participants/nemollm-inference-ms:dev-24.02
+      command: ["sleep", "365d"]
+      resources:
+        limits:
+          nvidia.com/gpu: 2
+      volumeMounts:
+      - mountPath: "/vol-model-store"
+        name: model
+      - mountPath: "/model-store"
+        subPath: "model-store"
+        name: model
+  securityContext:
+    runAsUser: 0
+    runAsGroup: 0
+  volumes:
+    - name: model
+      persistentVolumeClaim:
+        claimName: nemollm-inference-pvc

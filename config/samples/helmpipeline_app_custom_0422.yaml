@@ -1,0 +1,272 @@
+apiVersion: package.nvidia.com/v1alpha1
+kind: HelmPipeline
+metadata:
+  labels:
+    app.kubernetes.io/name: helmpipeline
+    app.kubernetes.io/instance: helmpipeline-sample
+    app.kubernetes.io/part-of: k8s-rag-operator
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: k8s-rag-operator
+  name: my-sample-pipeline
+spec:
+  pipeline:
+  - repoEntry:
+      name: nemollm-inference
+      url: "file:///helm-charts/pipeline"
+      #url: "cm://rag-application/nemollm-inference"
+    chartSpec:
+      chart: "nemollm-inference"
+      wait: false
+    chartValues:
+      fullnameOverride: "nemollm-inference"
+      model:
+        name: mistral-7b-instruct
+        numGpus: 2
+      nodeSelector:
+        nvidia.com/gpu.product: NVIDIA-A100-SXM4-40GB
+      resources:
+        limits:
+          nvidia.com/gpu: 2  # Number of GPUs to present to the running service
+      image:
+        repository: nvcr.io/ohlfw0olaadg/ea-participants/nemollm-inference-ms
+        pullPolicy: IfNotPresent
+        tag: "dev-24.02"
+      imagePullSecret:
+        # Leave blank, if no imagePullSecret is needed.
+        registry: "nvcr.io"
+        name: "ngc-secret"
+        # If set to false, the chart expects either a imagePullSecret
+        # with the name configured above to be present on the cluster or that no
+        # credentials are needed.
+        create: true
+        username: ''
+        password: "bWVybWFwajJvN2UyN2xiazVxaWFmbm5pM3M6MjBhYjQ4YjktODVhNS00YzU2LWE3NDktZWZlZDRkODNhNzhl"
+      # persist model to a PVC
+      persistence:
+        enabled: true
+        existingClaim: "nemollm-inference-pvc"
+        # Persistent Volume Storage Class
+        # If defined, storageClassName: <storageClass>
+        # If set to "-", storageClassName: "", which disables dynamic provisioning.
+        # If undefined (the default) or set to null, no storageClassName spec is
+        #   set, choosing the default provisioner.
+        storageClass: ""
+        accessMode: ReadWriteOnce  # If using an NFS or similar setup, you can use ReadWriteMany
+        size: 50Gi  # size of claim in bytes (e.g. 8Gi)
+        annotations: {}
+      # StatefulSet Update Strategy. Accepted Values: RollingUpdate, OnDelete
+      updateStrategy:
+        type: RollingUpdate
+      # persist model to a host path
+      hostPath:
+        enabled: false
+        path: /model-store-inference  # Only required if hostPath is enabled -- path to the model-store-inference
+      # model init containers, select only one - if needed.
+      initContainers: 
+        ngcInit: # disabled by default
+          imageName: nvcr.io/ohlfw0olaadg/ea-rag-examples/ngc-cli # should either have ngc cli pre-installed or wget + unzip pre-installed -- must not be musl-based (alpine)
+          imageTag: v3.37.1
+          secret: # name of kube secret for ngc keys named NGC_CLI_API_KEY (required) and NGC_DECRYPT_KEY (optional)
+            name: ngc-api-secret
+            create: true
+            apiKey: "bWVybWFwajJvN2UyN2xiazVxaWFmbm5pM3M6MjBhYjQ4YjktODVhNS00YzU2LWE3NDktZWZlZDRkODNhNzhl" # NGC_CLI_API_KEY
+            decryptKey: "" # NGC_DECRYPT_KEY
+          env:
+            STORE_MOUNT_PATH: /model-store
+            NGC_CLI_ORG: ohlfw0olaadg # ngc org where model lives
+            NGC_CLI_TEAM: ea-rag-examples # ngc team where model lives
+            NGC_MODEL_NAME: mistral-7b-instruct # model name in ngc; following NVDA doc: https://docs.nvidia.com/ai-enterprise/rag-llm-operator/0.4.1/pipelines.html 
+            NGC_MODEL_VERSION: MISTRAL-7b-INSTRUCT-1-A100.24.02.rc4 # model version in ngc; RH0422: 24.02 ver correct?
+            NGC_EXE: ngc  # path to ngc cli, if pre-installed in container
+            DOWNLOAD_NGC_CLI: "false"  # set to string 'true' if container should download and install ngc cli
+            NGC_CLI_VERSION: "3.37.1"  # version of ngc cli to download (only matters if downloading)
+            TARFILE: "true"  # tells the script to untar the model. defaults to "true" as LLM models are archived in NGC.
+            MODEL_NAME: LLAMA-2-7B-CHAT-4K-FP16-1-L40S.24.01 # actual model name, once downloaded
+        extraInit: [] # Add any additional init containers your use case requires.
+        # -  # full init container definition here
+  - repoEntry:
+      name: nemollm-embedding
+      url: "file:///helm-charts/pipeline"
+      #url: "cm://rag-application/nemollm-embedding"
+    chartSpec:
+      chart: "nemollm-embedding"
+      wait: false
+    chartValues:
+      fullnameOverride: "nemollm-embedding"
+      image:
+        repository: nvcr.io/ohlfw0olaadg/ea-participants/nemo-retriever-embedding-microservice
+        pullPolicy: IfNotPresent
+        # Tag overrides the image tag whose default is the chart appVersion.
+        tag: 24.02
+      imagePullSecret:
+        # Leave blank, if no imagePullSecret is needed.
+        registry: "nvcr.io"
+        name: "ngc-secret"
+        # If set to false, the chart expects either a imagePullSecret
+        # with the name configured above to be present on the cluster or that no
+        # credentials are needed.
+        create: false
+        username: ''
+        password: "bWVybWFwajJvN2UyN2xiazVxaWFmbm5pM3M6MjBhYjQ4YjktODVhNS00YzU2LWE3NDktZWZlZDRkODNhNzhl"
+      nodeSelector: {}
+      resources:
+        limits:
+          nvidia.com/gpu: 1  # Number of GPUs to present to the running service
+      # persist model to a PVC
+      persistence:
+        enabled: true
+        existingClaim: "nemollm-embedding-pvc"
+        # Persistent Volume Storage Class
+        # If defined, storageClassName: <storageClass>
+        # If set to "-", storageClassName: "", which disables dynamic provisioning.
+        # If undefined (the default) or set to null, no storageClassName spec is
+        #   set, choosing the default provisioner.
+        storageClass: ""
+        accessMode: ReadWriteOnce  # If using an NFS or similar setup, you can use ReadWriteMany
+        size: 50Gi  # size of claim in bytes (e.g. 8Gi)
+        annotations: {}
+      # StatefulSet Update Strategy. Accepted Values: RollingUpdate, OnDelete
+      updateStrategy:
+        type: RollingUpdate
+      # persist model to a host path
+      hostPath:
+        enabled: false
+        path: /model-store-embedding  # Only required if hostPath is enabled -- path to the model-store-embedding
+      # model init containers, select only one - if needed.
+      initContainers:
+        ngcInit: # disabled by default
+          imageName: nvcr.io/ohlfw0olaadg/ea-rag-examples/ngc-cli # should either have ngc cli pre-installed or wget + unzip pre-installed -- must not be musl-based (alpine)
+          imageTag: v3.37.1
+          secret: # name of kube secret for ngc keys named NGC_CLI_API_KEY (required) and NGC_DECRYPT_KEY (optional)
+            name: ngc-api-secret
+            create: false
+            apiKey: "bWVybWFwajJvN2UyN2xiazVxaWFmbm5pM3M6MjBhYjQ4YjktODVhNS00YzU2LWE3NDktZWZlZDRkODNhNzhl" # NGC_CLI_API_KEY
+            decryptKey: "" # NGC_DECRYPT_KEY
+          env:
+            STORE_MOUNT_PATH: /model-store
+            NGC_CLI_ORG: ohlfw0olaadg # ngc org where model lives
+            NGC_CLI_TEAM: ea-participants # ngc team where model lives
+            NGC_MODEL_ID: NV-Embed-QA # model ID for config file template used for TRT conversion
+            NGC_MODEL_NAME: nv-embed-qa # model name in ngc
+            NGC_MODEL_VERSION: "4" # model version in ngc
+            NGC_EXE: ngc  # path to ngc cli, if pre-installed in container
+            DOWNLOAD_NGC_CLI: "false"  # set to string 'true' if container should download and install ngc cli
+            NGC_CLI_VERSION: "3.37.1"  # version of ngc cli to download (only matters if downloading)
+            TARFILE: "false"  # tells the script to untar the model. defaults to "false" as embedding models are not archived in NGC.
+            MODEL_NAME: NV-Embed-QA-4.nemo # actual model name, once downloaded
+        extraInit: [] # Add any additional init containers your use case requires.
+        # -  # full init container definition here
+  - repoEntry:
+      name: rag-llm-app
+      url: "file:///helm-charts/pipeline"
+      #url: "cm://rag-application/rag-llm-app"
+    chartSpec:
+      chart: "rag-llm-app"
+      wait: false
+    chartValues:
+      query:
+        # Deployment update strategy. Accepted values: RollingUpdate, Recreate
+        deployStrategy:
+          type: RollingUpdate
+        image: nvcr.io/ohlfw0olaadg/ea-rag-examples/rag-application-text-chatbot:0.5.0-rc1
+        replicas: 1
+        nodeSelector: {}
+        tolerations: {}
+        affinity: {}
+        env:
+            APP_VECTORSTORE_URL: "pgvector:5432"
+            APP_VECTORSTORE_NAME: "pgvector"
+            APP_LLM_SERVERURL: "nemollm-inference:8005" # openai port of inference service
+            APP_LLM_MODELNAME: llama-2-7b-chat-hf
+            APP_LLM_MODELENGINE: nemo-infer
+            APP_EMBEDDINGS_SERVERURL: "nemollm-embedding:8080"
+            APP_EMBEDDINGS_MODELNAME: NV-Embed-QA
+            APP_EMBEDDINGS_MODELENGINE: nemo-embed
+            POSTGRES_PASSWORD: password
+            POSTGRES_USER: postgres
+            POSTGRES_DB: api
+            COLLECTION_NAME: canonical_rag
+        service:
+            type: ClusterIP
+            targetPort: 8081
+            ports:
+              - port: 8081
+                targetPort: http
+                protocol: TCP
+                name: http
+      frontend:
+        # Deployment update strategy. Accepted values: RollingUpdate, Recreate
+        deployStrategy:
+          type: RollingUpdate
+        image: nvcr.io/ohlfw0olaadg/ea-rag-examples/rag-playground:0.5.0-rc1
+        replicas: 1
+        nodeSelector: {}
+        tolerations: {}
+        affinity: {}
+        env:
+          - name: APP_MODELNAME
+            value: "llama-2-7b-chat-hf"
+          - name: APP_SERVERPORT
+            value: "8081"
+          - name: APP_SERVERURL
+            value: http://chain-server
+          - name: RIVA_API_URI
+            value: ""
+          - name: RIVA_API_KEY
+            value: ""
+          - name: RIVA_FUNCTION_ID
+            value: ""
+          - name: TTS_SAMPLE_RATE
+            value: "48000"
+        service:
+            type: NodePort
+            targetPort: 8090
+            ports:
+              - port: 8090
+                targetPort: http
+                protocol: TCP
+                name: http
+      pgvector:
+        enabled: true
+        image: ankane/pgvector:v0.5.1
+        replicas: 1
+        resources: {}
+        nodeSelector: {}
+        tolerations: {}
+        affinity: {}
+        env:
+          - name: POSTGRES_DB
+            value: "api"
+          - name: POSTGRES_PASSWORD
+            value: "password"
+          - name: POSTGRES_USER
+            value: "postgres"
+          - name: PGDATA
+            value: /var/lib/postgresql/data/pgdata
+        service:
+            type: ClusterIP
+            targetPort: 5432
+            ports:
+              - port: 5432
+                targetPort: http
+                protocol: TCP
+                name: http
+        # persist data to a persistent volume
+        persistence:
+          enabled: true
+          existingClaim: "pgvector-pvc"
+          # Persistent Volume Storage Class
+          # If defined, storageClassName: <storageClass>
+          # If set to "-", storageClassName: "", which disables dynamic provisioning.
+          # If undefined (the default) or set to null, no storageClassName spec is
+          #   set, choosing the default provisioner.
+          storageClass: ""
+          accessMode: ReadWriteOnce  # If using an NFS or similar setup, you can use ReadWriteMany
+          size: 50Gi  # size of claim in bytes (e.g. 8Gi)
+          annotations: {}
+        # StatefulSet Update Strategy. Accepted Values: RollingUpdate, OnDelete
+        updateStrategy:
+          type: RollingUpdate
+        hostPath:
+          enabled: false
+          path: /pgvector-data-store  # Only required if hostPath is enabled -- path to the pgvector data-store
