@@ -1,0 +1,48 @@
+# model_config.yaml
+model_repo_path: "/model-store/"
+use_ensemble: false
+model_type: "MISTRAL"
+backend: "trt_llm"  ## Rick: not sure?
+base_model_id: "ensemble"
+prompt_timer: 60
+customization_cache_capacity: 10000
+logging_level: "INFO"
+enable_chat: true
+preprocessor:
+  chat_cfg:
+    roles:
+      system:
+        prefix: "[INST] <<SYS>>\n"
+        suffix: "\n<</SYS>>\n\n"
+      user:
+        prefix: ""
+        suffix: " [/INST] "
+      assistant:
+        prefix: ""
+        suffix: " </s><s>[INST] "
+    stop_words: ["</s>"]
+    rstrip_turn: true
+    turn_suffix: "\n"
+pipeline:
+  model_name: "ensemble"
+  num_instances: 1
+trt_llm:
+  use: true
+  ckpt_type: "hf"
+  model_name: "trt_llm"
+  backend: "python"
+  num_gpus: 2
+  model_path: /vol-model-store/tmp/mistral-7B-v0.2
+  max_queue_delay_microseconds: 10000
+  model_type: "llama"
+  max_batch_size: 1
+  max_input_len: 4096
+  max_output_len: 4096
+  max_beam_width: 1
+  tensor_para_size: 2
+  pipeline_para_size: 1
+  data_type: "float16"
+  int8_mode: 0
+  enable_custom_all_reduce: 0
+  per_column_scaling: false
+
