@@ -1,7 +1,7 @@
 # model_config.yaml
 model_repo_path: "/model-store/"
 use_ensemble: false
-model_type: "MISTRAL"
+model_type: "falcon" # Rick: capitalize 'f'?
 backend: "trt_llm"  ## Rick: not sure?
 base_model_id: "ensemble"
 prompt_timer: 60
@@ -32,9 +32,9 @@ trt_llm:
   model_name: "trt_llm"
   backend: "python"
   num_gpus: 2
-  model_path: /vol-model-store/tmp/mistral-7B-v0.2
+  model_path: /vol-model-store/tmp/mistral-7B-v0.2 # Rick: model path for 'falcon' models? Download from NGC/HF?
   max_queue_delay_microseconds: 10000
-  model_type: "llama"
+  model_type: "falcon"
   max_batch_size: 1
   max_input_len: 4096
   max_output_len: 4096
@@ -45,4 +45,3 @@ trt_llm:
   int8_mode: 0
   enable_custom_all_reduce: 0
   per_column_scaling: false
-
