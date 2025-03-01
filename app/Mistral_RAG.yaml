@@ -1,0 +1,9 @@
+pipeline:
+  name: custom_mistral_rag_pipeline
+  stages:
+    - name: retrieval
+      type: dense
+      model: "Mistral AI 1.0"
+    - name: generation
+      type: seq2seq
+      model: "gpt-4o"
