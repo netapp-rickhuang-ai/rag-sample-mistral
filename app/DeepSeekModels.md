@@ -6,13 +6,21 @@
 - **Accuracy:** 90%
 - **Speed:** Fast
 - **Complexity:** Low
-
+pipeline:
+  name: custom_mistral_rag_pipeline
+  stages:
+    - name: retrieval
+      type: dense
+      model: "Mistral AI 1.0"
+    - name: generation
+      type: seq2seq
+      model: "gpt-4o"
 ### Model BERT
 - **Accuracy:** 88%
 - **Speed:** Medium
 - **Complexity:** Medium
 
-### T5 (t2t TTransfomer)
+### T5 (t2t Transfer-Transfomer)
 - **Accuracy:** 85%
 - **Speed:** Slow
 - **Complexity:** High

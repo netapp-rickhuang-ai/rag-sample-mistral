@@ -18,7 +18,7 @@
 |                     |       |                     |
 +---------------------+       +---------------------+
 |                     |       |                     |
-| T5 (t2t TTransfomer)|       |  XLNET              |
+| T5 (t2t T-Transformer))     |            |  XLNET              |
 |  - Accuracy: 85%    |       |  - Accuracy: 90%    |
 |  - Speed: Slow      |       |  - Speed: Fast      |
 |  - Complexity: High |       |  - Complexity: Medium|

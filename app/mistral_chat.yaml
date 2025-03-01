@@ -8,7 +8,7 @@ appVersion: "1.0"
 
 # Values.yaml
 image:
-  repository: mistralai/mistral-app
+  repository: mistral/mistral-app
   tag: "latest"
   pullPolicy: IfNotPresent
 
@@ -23,10 +23,6 @@ resources:
   requests:
     cpu: "250m"
     memory: "256Mi"
-
-# Deployment.yaml
-apiVersion: apps/v1
-kind: Deployment
 metadata:
   name: mistral-app
   labels:
@@ -55,11 +51,60 @@ spec:
             memory: {{ .Values.resources.requests.memory }}
 
 # Service.yaml
-apiVersion: v1
-kind: Service
+memory: {{ .Values.resources.requests.memory }}
+app: mistral-app
+        memory: {{ .Values.resources.requests.memory }}
+app: mistral-app
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+  selector:
+    app: mistral-app
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+  selector:
+    app: mistral-app
+```yaml
+resources:
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+  requests:
+    cpu: "250m"
+    memory: "256Mi"
 metadata:
   name: mistral-app
   labels:
+    app: mistral-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mistral-app
+  template:
+    metadata:
+      labels:
+        app: mistral-app
+    spec:
+      containers:
+      - name: mistral-app
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: {{ .Values.resources.limits.cpu }}
+            memory: {{ .Values.resources.limits.memory }}
+          requests:
+            cpu: {{ .Values.resources.requests.cpu }}
+            memory: {{ .Values.resources.requests.memory }}
+
+# Service.yaml
+```yaml
+            memory: {{ .Values.resources.requests.memory }}
     app: mistral-app
 spec:
   type: {{ .Values.service.type }}
