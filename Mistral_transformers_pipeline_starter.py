@@ -1,6 +1,8 @@
 import app
-import Mistral_transformers_pipeline.get_tokenizer
-from Mistral_transformers_pipeline import get_tokenizer, get_retriever, get_model
+# import Mistral_transformers_pipeline
+import app.Mistral_transformers_pipeline
+# From app.Mistral_transformers_pipeline import get_tokenizer
+from app.Mistral_transformers_pipeline.get_tokenizer import get_retriever, get_model
 import unittest
 from unittest.mock import patch  # For mocking expensive operations
 
