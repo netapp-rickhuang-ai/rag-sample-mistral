@@ -1,0 +1,25 @@
+
+Summary of the Mistral Transformers Pipeline Starter:
+
+1. **utils.py**: Contains utility functions such as `get_specific_files` to retrieve files with specific extensions from a directory.
+
+2. **animate_stability_stf.py**: Contains functions for generating images using the Stability API and animating them.
+
+3. **_starter.py**: Contains unit tests for the model.
+
+4. **ollama_integration.py**: Contains a function to run the `ollama pull llama3.1` command to pull the llama model.
+
+5. **wrapper.py**: Integrates functionalities from the above modules and scripts.
+   - Retrieves specific files from a directory.
+   - Processes files using a function from `Mistral_transformers_pipeline_import.py`.
+   - Uses functions from `animate_stability_stf.py` to generate and animate images.
+   - Runs unit tests from `_starter.py`.
+   - Pulls the llama model using `ollama_integration.py`.
+
+To run the wrapper function, use the following command:
+
+```bash
+python wrapper.py
+```
+
+This will execute the integrated functionalities and print the results.

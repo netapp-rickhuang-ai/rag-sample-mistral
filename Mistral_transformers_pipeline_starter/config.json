@@ -1,0 +1,16 @@
+{
+  "auths": {
+    "nvcr.io": {
+      "auth": "bWVybWFwajJvN2UyN2xiazVxaWFmbm5pM3M6MjBhYjQ4YjktODVhNS00YzU2LWE3NDktZWZlZDRkODNhNzhl"
+    },
+    "docker.io": {
+        "auth": "YOUR_BASE64_ENCODED_DOCKERHUB_CREDENTIALS"
+    },
+    "your-private-registry.com": {
+      "auth": "YOUR_BASE64_ENCODED_REGISTRY_CREDENTIALS"
+    }
+  },
+  "HttpHeaders": {
+        "User-Agent": "Docker-Client/19.03.9 (linux)"
+  }
+}

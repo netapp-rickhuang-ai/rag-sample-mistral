@@ -1,0 +1,16 @@
+Mistral_transformers_pipeline_starter
+├── charts
+│   └── mistral-app
+│       ├── Chart.yaml
+│       ├── values.yaml
+│       ├── templates
+│       │   ├── deployment.yaml
+│       │   └── service.yaml
+│       └── _helpers.tpl
+├── scripts
+│   ├── animate_stability_stf.py
+│   └── mistral_starter_chat.py
+├── utils.py
+├── wrapper.py
+├── .env
+└── README.md
