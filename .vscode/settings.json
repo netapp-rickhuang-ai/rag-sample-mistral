@@ -1,0 +1,5 @@
+{
+    "editor.unicodeHighlight.includeComments": true,
+    "editor.unicodeHighlight.includeStrings": "inUntrustedWorkspace",
+    "workbench.externalBrowser": "edge"
+}
